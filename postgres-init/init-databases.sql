@@ -1,0 +1,4 @@
+CREATE DATABASE flight_db;
+CREATE DATABASE hotel_db;
+CREATE DATABASE car_db;
+CREATE DATABASE orchestrator_db;

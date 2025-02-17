@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orchestrator-service
+  template:
+    metadata:
+      labels:
+        app: orchestrator-service
+    spec:
+      containers:
+      - name: orchestrator-service
+        image: saga-orchestrator-service:latest
+        imagePullPolicy: Never
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres:5432/default_db"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+        - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+          value: "http://zipkin:9411/api/v2/spans"
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orchestrator-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+  selector:
+    app: orchestrator-service
