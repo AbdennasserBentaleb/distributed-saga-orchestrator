@@ -51,8 +51,8 @@ services:
 
   orchestrator-service:
     build:
-      context: ./orchestrator-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: orchestrator-service/Dockerfile
     container_name: saga_orchestrator
     ports:
       - "8085:8080"
@@ -72,8 +72,8 @@ services:
 
   flight-service:
     build:
-      context: ./flight-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: flight-service/Dockerfile
     container_name: saga_flight
     ports:
       - "8082:8082"
@@ -92,8 +92,8 @@ services:
 
   hotel-service:
     build:
-      context: ./hotel-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: hotel-service/Dockerfile
     container_name: saga_hotel
     ports:
       - "8083:8083"
@@ -112,8 +112,8 @@ services:
 
   car-service:
     build:
-      context: ./car-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: car-service/Dockerfile
     container_name: saga_car
     ports:
       - "8081:8081"

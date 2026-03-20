@@ -2,9 +2,40 @@
 
 A multi-service Spring Boot application implementing the **Saga Orchestration Pattern** for distributed transaction management in a travel booking domain. The system coordinates flight, hotel, and car reservations and guarantees eventual data consistency through automated compensating transactions when any step fails.
 
-## Architecture Decisions & Trade-offs
+## High-Level Architecture
 
-Distributed systems demand explicit choices. Here is what was decided and why, along with honest acknowledgements of what this design does not provide.
+The system utilizes the Saga Orchestration pattern with Kafka as the event broker.
+
+```mermaid
+graph TD
+    Client[Client / Dashboard] -->|POST /api/trips/book| OS(Orchestrator Service)
+
+    subgraph Event Broker
+    Kafka(Apache Kafka)
+    end
+
+    OS -->|Produce Command| Kafka
+    Kafka -->|Consume Command| FS(Flight Service)
+    Kafka -->|Consume Command| HS(Hotel Service)
+    Kafka -->|Consume Command| CS(Car Service)
+
+    FS -->|Produce Reply| Kafka
+    HS -->|Produce Reply| Kafka
+    CS -->|Produce Reply| Kafka
+    Kafka -->|Consume Reply| OS
+```
+
+## Tech Stack
+
+- **Core**: Java 21, Spring Boot 3.2.x
+- **Event Streaming**: Apache Kafka, Zookeeper
+- **Database**: PostgreSQL 15
+- **Containerization**: Docker, Docker Compose (Multi-stage builds)
+- **Deployment**: Kubernetes
+- **Observability**: Zipkin, OpenTelemetry, Micrometer
+- **Frontend**: Vue 3, Vite
+
+## Architecture Decisions & Trade-offs
 
 ### Why Kafka over RabbitMQ
 
@@ -30,25 +61,6 @@ A non-obvious production challenge encountered during development was Kafka cons
 
 Product requirements and domain definitions are in [`docs/PRD.md`](docs/PRD.md).
 
-```mermaid
-graph TD
-    Client[Client / Dashboard] -->|POST /api/trips/book| OS(Orchestrator Service)
-
-    subgraph Event Broker
-    Kafka(Apache Kafka)
-    end
-
-    OS -->|Produce Command| Kafka
-    Kafka -->|Consume Command| FS(Flight Service)
-    Kafka -->|Consume Command| HS(Hotel Service)
-    Kafka -->|Consume Command| CS(Car Service)
-
-    FS -->|Produce Reply| Kafka
-    HS -->|Produce Reply| Kafka
-    CS -->|Produce Reply| Kafka
-    Kafka -->|Consume Reply| OS
-```
-
 ## Running Locally
 
 ### Prerequisites
@@ -56,17 +68,11 @@ graph TD
 - Java 21
 - Docker and Docker Compose
 
-### 1. Build All Services
+### 1. Build and Start the Stack
 
-From the project root, build the entire multi-module Maven project. Tests are skipped here to keep the initial build fast.
+The project uses multi-stage Dockerfiles. It compiles the Java services directly inside the container during the build phase. You do not need Maven installed on your host system.
 
-```bash
-./mvnw clean package -DskipTests
-```
-
-### 2. Start the Stack
-
-This brings up PostgreSQL, Zookeeper, Kafka, Zipkin, four Spring Boot services, and the Vue dashboard in one command.
+This single command brings up PostgreSQL, Zookeeper, Kafka, Zipkin, four Spring Boot services, and the Vue dashboard:
 
 ```bash
 docker-compose up -d --build
