@@ -66,9 +66,11 @@ public class SagaOrchestratorService {
                 // A SUCCESS reply from FLIGHT during a CANCELLING_FLIGHT status means the compensation is fully done.
                 if (sagaState.getStatus() == SagaStatus.CANCELLING_FLIGHT) {
                     sagaState.setStatus(SagaStatus.COMPENSATED);
+                    sagaRepository.saveAndFlush(sagaState);
                     log.info("Saga COMPENSATED entirely for sagaId: {}", sagaState.getId());
                 } else {
                     sagaState.setStatus(SagaStatus.FLIGHT_BOOKED);
+                    sagaRepository.saveAndFlush(sagaState);
                     sendCommand(sagaState.getId(), sagaState.getCustomerId(), ServiceType.HOTEL, CommandType.BOOK, null,
                             sagaState.getHotelDetails(), null);
                 }
@@ -76,20 +78,22 @@ public class SagaOrchestratorService {
             case HOTEL:
                 if (sagaState.getStatus() == SagaStatus.CANCELLING_HOTEL) {
                     sagaState.setStatus(SagaStatus.CANCELLING_FLIGHT);
+                    sagaRepository.saveAndFlush(sagaState);
                     sendCommand(sagaState.getId(), sagaState.getCustomerId(), ServiceType.FLIGHT, CommandType.CANCEL,
                             null, null, null);
                 } else {
                     sagaState.setStatus(SagaStatus.HOTEL_BOOKED);
+                    sagaRepository.saveAndFlush(sagaState);
                     sendCommand(sagaState.getId(), sagaState.getCustomerId(), ServiceType.CAR, CommandType.BOOK, null,
                             null, sagaState.getCarDetails());
                 }
                 break;
             case CAR:
                 sagaState.setStatus(SagaStatus.COMPLETED);
+                sagaRepository.saveAndFlush(sagaState);
                 log.info("Saga COMPLETED successfully for sagaId: {}", sagaState.getId());
                 break;
         }
-        sagaRepository.save(sagaState);
     }
 
     private void handleFailureEvent(SagaState sagaState, ServiceType serviceType, String reason) {
@@ -97,20 +101,22 @@ public class SagaOrchestratorService {
         switch (serviceType) {
             case FLIGHT:
                 sagaState.setStatus(SagaStatus.COMPENSATED);
+                sagaRepository.saveAndFlush(sagaState);
                 log.info("Failed on Flight. Nothing to compensate. Saga marked as COMPENSATED.");
                 break;
             case HOTEL:
                 sagaState.setStatus(SagaStatus.CANCELLING_FLIGHT);
+                sagaRepository.saveAndFlush(sagaState);
                 sendCommand(sagaState.getId(), sagaState.getCustomerId(), ServiceType.FLIGHT, CommandType.CANCEL, null,
                         null, null);
                 break;
             case CAR:
                 sagaState.setStatus(SagaStatus.CANCELLING_HOTEL);
+                sagaRepository.saveAndFlush(sagaState);
                 sendCommand(sagaState.getId(), sagaState.getCustomerId(), ServiceType.HOTEL, CommandType.CANCEL, null,
                         null, null);
                 break;
         }
-        sagaRepository.save(sagaState);
     }
 
     private void sendCommand(UUID sagaId, String customer, ServiceType targetService, CommandType commandType,

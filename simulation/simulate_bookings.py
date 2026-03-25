@@ -14,8 +14,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("SimulationEngine")
 
-ORCHESTRATOR_URL = "http://localhost:8080/api/trips/book"
-AUDIT_URL = "http://localhost:8080/api/trips/audit"
+ORCHESTRATOR_URL = "http://localhost:8085/api/trips/book"
+AUDIT_URL = "http://localhost:8085/api/trips/audit"
 TOTAL_REQUESTS = 1000
 
 async def send_booking(session, req_id):

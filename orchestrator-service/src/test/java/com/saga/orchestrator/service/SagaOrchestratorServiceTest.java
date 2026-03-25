@@ -67,6 +67,6 @@ class SagaOrchestratorServiceTest {
 
         assertEquals(SagaStatus.FLIGHT_BOOKED, state.getStatus());
         verify(kafkaTemplate).send(eq("hotel-commands"), eq(sagaId.toString()), any(SagaCommand.class));
-        verify(sagaRepository).save(state);
+        verify(sagaRepository).saveAndFlush(state);
     }
 }
