@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flight-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flight-service
+  template:
+    metadata:
+      labels:
+        app: flight-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      containers:
+      - name: flight-service
+        image: ghcr.io/abdennasserbentaleb/distributed-saga-orchestrator/flight-service:latest
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgresql:5432/flight_db"
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+        - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+          value: "http://zipkin:9411/api/v2/spans"
+        ports:
+        - containerPort: 8082
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8082
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8082
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flight-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8082
+  selector:
+    app: flight-service
